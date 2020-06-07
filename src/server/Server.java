@@ -18,7 +18,7 @@ public class Server {
         ServerSocket server = null;
         Socket socket;
 
-        final int PORT = 8189;
+        final int PORT = 8080;
 
         try {
             server = new ServerSocket(PORT);
@@ -41,21 +41,41 @@ public class Server {
         }
     }
 
-    public void broadcastMsg(String msg){
-        for (ClientHandler c:clients) {
+    public synchronized void broadcastMsg(String msg) {
+        for (ClientHandler c : clients) {
             c.sendMsg(msg);
         }
     }
 
-    public void subscribe(ClientHandler clientHandler){
+    public synchronized void broadcastMsg(String msg, String... nicks) {
+        int countCurrent = 0;
+        int countAll = nicks.length;
+
+        for (ClientHandler c : clients) {
+            for (String nick : nicks) {
+                if (c.getName().equals(nick)) {
+                    c.sendMsg(msg);
+
+                    if (++countCurrent == countAll) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
     }
 
-    public void unsubscribe(ClientHandler clientHandler){
+    public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
     }
 
     public AuthService getAuthService() {
         return authService;
     }
+
+
+
 }

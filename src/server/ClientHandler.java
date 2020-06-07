@@ -14,9 +14,11 @@ public class ClientHandler {
     private String nick;
     private String login;
 
+
     public ClientHandler(Server server, Socket socket) {
         this.server = server;
         this.socket = socket;
+this.nick = "";
         try {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
@@ -40,10 +42,10 @@ public class ClientHandler {
 
                             if (newNick != null) {
                                 sendMsg("/authok " + newNick);
-                                nick = newNick;
+                                this.nick = newNick;
                                 login = token[1];
                                 server.subscribe(this);
-                                System.out.println("Клиент: " + nick + " подключился");
+                                System.out.println("Клиент: " + this.nick + " подключился");
                                 break;
                             } else {
                                 sendMsg("Неверный логин / пароль");
@@ -55,13 +57,17 @@ public class ClientHandler {
                     while (true) {
                         String str = in.readUTF();
 
+
                         if (str.equals("/end")) {
                             sendMsg("/end");
                             break;
                         }
+                    else if (str.startsWith("/w ")) {
+                        String[] elements = str.split(" ", 3);
 
-                        server.broadcastMsg(nick + ": " + str);
-                    }
+                        server.broadcastMsg("Сообщение от " + this.nick + " для " + elements[1] + " (приват): " + elements[2], this.nick, elements[1]);
+                    } else {   server.broadcastMsg(this.nick + ": " + str);
+                    }}
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -87,5 +93,18 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public void sendMessage(String msg) {
+        try {
+            System.out.println("->сообщение" + (this.nick != null ? " " + this.nick : "") + ": " + msg);
+
+            out.writeUTF(msg);
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public String getName() {
+        return nick;
     }
 }
